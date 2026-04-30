@@ -22,36 +22,41 @@ public actor HTTPClient {
 
     public func get<T: Decodable & Sendable>(
         _ path: String,
-        query: [String: String]? = nil
+        query: [String: String]? = nil,
+        additionalHeaders: [String: String] = [:]
     ) async throws -> T {
-        try await request(path, method: .get, query: query)
+        try await request(path, method: .get, query: query, additionalHeaders: additionalHeaders)
     }
 
     public func post<T: Decodable & Sendable>(
         _ path: String,
-        body: (any Encodable & Sendable)? = nil
+        body: (any Encodable & Sendable)? = nil,
+        additionalHeaders: [String: String] = [:]
     ) async throws -> T {
-        try await request(path, method: .post, body: body)
+        try await request(path, method: .post, body: body, additionalHeaders: additionalHeaders)
     }
 
     public func put<T: Decodable & Sendable>(
         _ path: String,
-        body: (any Encodable & Sendable)? = nil
+        body: (any Encodable & Sendable)? = nil,
+        additionalHeaders: [String: String] = [:]
     ) async throws -> T {
-        try await request(path, method: .put, body: body)
+        try await request(path, method: .put, body: body, additionalHeaders: additionalHeaders)
     }
 
     public func delete<T: Decodable & Sendable>(
-        _ path: String
+        _ path: String,
+        additionalHeaders: [String: String] = [:]
     ) async throws -> T {
-        try await request(path, method: .delete)
+        try await request(path, method: .delete, additionalHeaders: additionalHeaders)
     }
 
     private func request<T: Decodable & Sendable>(
         _ path: String,
         method: HTTPMethod,
         query: [String: String]? = nil,
-        body: (any Encodable & Sendable)? = nil
+        body: (any Encodable & Sendable)? = nil,
+        additionalHeaders: [String: String] = [:]
     ) async throws -> T {
         guard var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
             throw ApiError.business(code: -1, message: "Invalid URL: \(path)")
@@ -70,6 +75,10 @@ public actor HTTPClient {
 
         if let token = await tokenProvider?() {
             urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        for (key, value) in additionalHeaders {
+            urlRequest.setValue(value, forHTTPHeaderField: key)
         }
 
         if let body {
