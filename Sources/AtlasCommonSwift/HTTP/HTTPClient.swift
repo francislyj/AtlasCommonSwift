@@ -18,6 +18,7 @@ public actor HTTPClient {
         self.decoder = JSONDecoder()
         self.decoder.keyDecodingStrategy = .convertFromSnakeCase
         self.encoder = JSONEncoder()
+        self.encoder.keyEncodingStrategy = .convertToSnakeCase
     }
 
     public func get<T: Decodable & Sendable>(
