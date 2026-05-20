@@ -4,6 +4,9 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetryProtocolExporterHttp
+#if os(iOS)
+import UIKit
+#endif
 
 public enum OTelSetup: Sendable {
     nonisolated(unsafe) private static var tracerProvider: TracerProviderSdk?
@@ -88,10 +91,22 @@ public enum OTelSetup: Sendable {
     }
 
     private static func makeResource(_ config: OTelConfig) -> Resource {
-        Resource(attributes: [
+        var attributes: [String: AttributeValue] = [
             "service.name": .string(config.serviceName),
             "service.version": .string(config.serviceVersion),
             "deployment.environment": .string(config.environment),
-        ])
+        ]
+
+        #if os(iOS)
+        let device = UIDevice.current
+        attributes["os.name"] = .string("iOS")
+        attributes["os.version"] = .string(device.systemVersion)
+        attributes["device.model"] = .string(device.model)
+        #endif
+
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        attributes["app.version"] = .string(appVersion)
+
+        return Resource(attributes: attributes)
     }
 }

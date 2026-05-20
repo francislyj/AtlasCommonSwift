@@ -51,7 +51,7 @@ public actor InstrumentedHTTPClient {
         }
     }
 
-    private func traced<T>(
+    private func traced<T: Sendable>(
         _ method: String,
         path: String,
         operation: @Sendable ([String: String]) async throws -> T
