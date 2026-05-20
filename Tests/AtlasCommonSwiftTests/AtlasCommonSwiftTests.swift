@@ -1,8 +1,15 @@
 import Testing
 @testable import AtlasCommonSwift
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    // Swift Testing Documentation
-    // https://developer.apple.com/documentation/testing
+@Test func logLevelEnumExists() {
+    let levels: [Log.Level] = [.debug, .info, .warning, .error]
+    #expect(levels.count == 4)
+}
+
+@Test func logDoesNotCrashWhenHookIsNil() {
+    Log._otelEmit = nil
+    Log.debug("no crash")
+    Log.info("no crash")
+    Log.warning("no crash")
+    Log.error("no crash")
 }
