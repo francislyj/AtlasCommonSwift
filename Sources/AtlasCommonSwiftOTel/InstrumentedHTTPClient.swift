@@ -70,6 +70,7 @@ public actor InstrumentedHTTPClient {
         do {
             let result = try await operation(headers)
             span.status = .ok
+            Log.info("[trace:\(traceId)] \(method) \(path) OK", category: "HTTP")
             return result
         } catch {
             let message = error.localizedDescription
@@ -78,6 +79,7 @@ public actor InstrumentedHTTPClient {
                 name: "exception",
                 attributes: ["exception.message": .string(message)]
             )
+            Log.error("[trace:\(traceId)] \(method) \(path) failed: \(message)", category: "HTTP")
             throw error
         }
     }
