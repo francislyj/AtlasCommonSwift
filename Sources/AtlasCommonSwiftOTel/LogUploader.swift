@@ -43,7 +43,7 @@ public enum LogUploader: Sendable {
     }
 
     public static func upload(entries: [LogEntry]) async throws {
-        guard let config else { throw UploadError.notConfigured }
+        guard let config, config.enabled else { throw UploadError.notConfigured }
 
         let logRecords: [[String: Any]] = entries.map { entry in
             let nanos = String(Int(entry.timestamp.timeIntervalSince1970 * 1_000_000_000))
@@ -55,9 +55,6 @@ public enum LogUploader: Sendable {
             ]
             if let traceId {
                 attributes.append(makeAttribute(key: "trace_id", stringValue: traceId))
-            }
-            for (key, value) in context {
-                attributes.append(makeAttribute(key: key, stringValue: value))
             }
 
             return [
@@ -95,13 +92,15 @@ public enum LogUploader: Sendable {
         }
     }
 
+    private static let traceIdRegex = try! NSRegularExpression(pattern: #"\[trace:([a-f0-9]+)\] "#)
+
     private static func extractTraceId(from message: String) -> (String, String?) {
-        guard let range = message.range(of: #"\[trace:([a-f0-9]+)\] "#, options: .regularExpression) else {
+        let nsRange = NSRange(message.startIndex..., in: message)
+        guard let match = traceIdRegex.firstMatch(in: message, range: nsRange) else {
             return (message, nil)
         }
-        let tag = message[range]
-        let traceId = String(tag.dropFirst(7).dropLast(2))
-        let clean = message.replacingCharacters(in: range, with: "")
+        let traceId = String(message[Range(match.range(at: 1), in: message)!])
+        let clean = message.replacingCharacters(in: Range(match.range, in: message)!, with: "")
         return (clean, traceId)
     }
 
@@ -131,6 +130,13 @@ public enum LogUploader: Sendable {
             makeAttribute(key: "deployment.environment", stringValue: config.environment),
             makeAttribute(key: "source", stringValue: "manual-upload"),
         ]
+
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        attrs.append(makeAttribute(key: "app.version", stringValue: appVersion))
+
+        for (key, value) in context {
+            attrs.append(makeAttribute(key: key, stringValue: value))
+        }
 
         #if os(iOS)
         let device = UIDevice.current
