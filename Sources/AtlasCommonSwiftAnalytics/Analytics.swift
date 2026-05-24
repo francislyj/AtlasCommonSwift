@@ -23,6 +23,9 @@ public enum Analytics: Sendable {
         let phConfig = PostHogConfig(projectToken: config.projectToken, host: config.host)
         phConfig.captureApplicationLifecycleEvents = true
         phConfig.captureScreenViews = true
+        #if DEBUG
+        phConfig.debug = true
+        #endif
         PostHogSDK.shared.setup(phConfig)
 
         isConfigured = true
