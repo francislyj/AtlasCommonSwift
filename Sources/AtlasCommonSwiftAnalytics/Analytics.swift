@@ -51,4 +51,18 @@ public enum Analytics: Sendable {
         guard isConfigured else { return }
         PostHogSDK.shared.reset()
     }
+
+    public static func isFeatureEnabled(_ key: String) -> Bool {
+        guard isConfigured else { return false }
+        return PostHogSDK.shared.isFeatureEnabled(key)
+    }
+
+    public static func reloadFeatureFlags(_ callback: (() -> Void)? = nil) {
+        guard isConfigured else { return }
+        if let callback {
+            PostHogSDK.shared.reloadFeatureFlags(callback)
+        } else {
+            PostHogSDK.shared.reloadFeatureFlags()
+        }
+    }
 }
