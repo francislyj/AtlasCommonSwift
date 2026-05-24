@@ -14,10 +14,15 @@ let package = Package(
             name: "AtlasCommonSwiftOTel",
             targets: ["AtlasCommonSwiftOTel"]
         ),
+        .library(
+            name: "AtlasCommonSwiftAnalytics",
+            targets: ["AtlasCommonSwiftAnalytics"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.3.0"),
         .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.3.0"),
+        .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.58.0"),
     ],
     targets: [
         .target(
@@ -30,6 +35,13 @@ let package = Package(
                 .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
                 .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
                 .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
+            ]
+        ),
+        .target(
+            name: "AtlasCommonSwiftAnalytics",
+            dependencies: [
+                "AtlasCommonSwift",
+                .product(name: "PostHog", package: "posthog-ios"),
             ]
         ),
         .testTarget(
