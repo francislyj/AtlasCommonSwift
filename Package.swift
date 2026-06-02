@@ -18,11 +18,24 @@ let package = Package(
             name: "AtlasCommonSwiftAnalytics",
             targets: ["AtlasCommonSwiftAnalytics"]
         ),
+        .library(
+            name: "AuthCore",
+            targets: ["AuthCore"]
+        ),
+        .library(
+            name: "AtlasCommonSwiftAuthApple",
+            targets: ["AtlasCommonSwiftAuthApple"]
+        ),
+        .library(
+            name: "AtlasCommonSwiftAuthGoogle",
+            targets: ["AtlasCommonSwiftAuthGoogle"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.3.0"),
         .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.3.0"),
         .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.58.0"),
+        .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "8.0.0"),
     ],
     targets: [
         .target(
@@ -42,6 +55,22 @@ let package = Package(
             dependencies: [
                 "AtlasCommonSwift",
                 .product(name: "PostHog", package: "posthog-ios"),
+            ]
+        ),
+        .target(
+            name: "AuthCore",
+            dependencies: ["AtlasCommonSwift"]
+        ),
+        .target(
+            name: "AtlasCommonSwiftAuthApple",
+            dependencies: ["AtlasCommonSwift", "AuthCore"]
+        ),
+        .target(
+            name: "AtlasCommonSwiftAuthGoogle",
+            dependencies: [
+                "AtlasCommonSwift",
+                "AuthCore",
+                .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
             ]
         ),
         .testTarget(
