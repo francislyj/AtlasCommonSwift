@@ -52,13 +52,13 @@ public actor HTTPClient {
         try await request(path, method: .delete, additionalHeaders: additionalHeaders)
     }
 
-    private func request<T: Decodable & Sendable>(
+    private func sendRequest(
         _ path: String,
         method: HTTPMethod,
         query: [String: String]? = nil,
         body: (any Encodable & Sendable)? = nil,
         additionalHeaders: [String: String] = [:]
-    ) async throws -> T {
+    ) async throws -> Data {
         guard var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
             throw ApiError.business(code: -1, message: "Invalid URL: \(path)")
         }
@@ -94,6 +94,18 @@ public actor HTTPClient {
             throw ApiError.network(error)
         }
 
+        return data
+    }
+
+    private func request<T: Decodable & Sendable>(
+        _ path: String,
+        method: HTTPMethod,
+        query: [String: String]? = nil,
+        body: (any Encodable & Sendable)? = nil,
+        additionalHeaders: [String: String] = [:]
+    ) async throws -> T {
+        let data = try await sendRequest(path, method: method, query: query, body: body, additionalHeaders: additionalHeaders)
+
         let apiResponse: ApiResponse<T>
         do {
             apiResponse = try decoder.decode(ApiResponse<T>.self, from: data)
@@ -114,5 +126,33 @@ public actor HTTPClient {
         }
 
         return result
+    }
+
+    private func requestExpectingNoData(
+        _ path: String,
+        method: HTTPMethod,
+        query: [String: String]? = nil,
+        body: (any Encodable & Sendable)? = nil,
+        additionalHeaders: [String: String] = [:]
+    ) async throws {
+        let data = try await sendRequest(path, method: method, query: query, body: body, additionalHeaders: additionalHeaders)
+        struct EnvelopeOnly: Decodable { let code: Int; let message: String }
+        let env: EnvelopeOnly
+        do { env = try decoder.decode(EnvelopeOnly.self, from: data) }
+        catch { throw ApiError.decoding(error) }
+        if env.code == ErrorCode.unauthorized.rawValue { throw ApiError.unauthorized }
+        guard env.code == ErrorCode.success.rawValue else {
+            throw ApiError.business(code: env.code, message: env.message)
+        }
+    }
+
+    /// POSTs and treats any `code == 0` envelope as success, ignoring `data`.
+    /// For endpoints returning `{code:0,message:"success",data:null}`.
+    public func postExpectingNoData(
+        _ path: String,
+        body: (any Encodable & Sendable)? = nil,
+        additionalHeaders: [String: String] = [:]
+    ) async throws {
+        try await requestExpectingNoData(path, method: .post, body: body, additionalHeaders: additionalHeaders)
     }
 }

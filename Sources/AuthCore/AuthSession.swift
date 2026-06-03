@@ -55,11 +55,70 @@ public actor AuthSession {
         return tokens.accessToken
     }
 
+    /// Starts email/password registration: backend emails a 6-digit code.
+    public func registerStart(email: String, password: String) async throws {
+        try await client.postExpectingNoData(
+            "/v1/auth/register/start",
+            body: ["email": email, "password": password]
+        )
+    }
+
+    /// Confirms registration with the emailed code; stores the issued JWT pair.
+    public func registerConfirm(email: String, code: String) async throws {
+        let tokens: TokenResponse = try await client.post(
+            "/v1/auth/register/confirm",
+            body: ["email": email, "code": code]
+        )
+        store(tokens)
+    }
+
+    /// Email/password login; stores the issued JWT pair.
+    public func login(email: String, password: String) async throws {
+        let tokens: TokenResponse = try await client.post(
+            "/v1/auth/login",
+            body: ["email": email, "password": password]
+        )
+        store(tokens)
+    }
+
+    /// Starts a password reset: backend emails a 6-digit code.
+    public func resetStart(email: String) async throws {
+        try await client.postExpectingNoData("/v1/auth/reset/start", body: ["email": email])
+    }
+
+    /// Completes a password reset with the emailed code + new password.
+    public func resetConfirm(email: String, code: String, newPassword: String) async throws {
+        try await client.postExpectingNoData(
+            "/v1/auth/reset/confirm",
+            body: ["email": email, "code": code, "new_password": newPassword]
+        )
+    }
+
     /// Clears tokens from memory and Keychain.
     public func signOut() {
         accessToken = nil
         refreshToken = nil
         TokenStore.clear()
+    }
+
+    /// Runs an authenticated request; on `ApiError.unauthorized` it refreshes the
+    /// token once and retries. A second 401 (or a failed refresh) propagates as
+    /// `.unauthorized` so the caller can drive the user back to the login gate.
+    ///
+    /// `operation` is intentionally not `@Sendable` so it inherits the caller's
+    /// isolation (required under MainActor-default concurrency, where request
+    /// bodies may be MainActor-isolated).
+    public func withRetry<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
+        do {
+            return try await operation()
+        } catch ApiError.unauthorized {
+            do {
+                _ = try await refresh()
+            } catch {
+                throw ApiError.unauthorized
+            }
+            return try await operation()
+        }
     }
 
     private func store(_ tokens: TokenResponse) {
