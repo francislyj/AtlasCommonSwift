@@ -1,6 +1,6 @@
 # CLAUDE.md — AtlasCommonSwift
 
-Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.2.6.
+Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.3.1.
 
 ## Build & Test
 
@@ -11,15 +11,18 @@ swift test                     # Run tests (AtlasCommonSwiftTests + OTelTests)
 
 Xcode: open `Package.swift`, select any iOS simulator or macOS target to build/test.
 
-## Architecture — Three Library Products
+## Architecture — Six Library Products
 
 ```
-AtlasCommonSwift          ← zero dependencies, core types
-AtlasCommonSwiftOTel      ← depends on opentelemetry-swift, adds tracing
-AtlasCommonSwiftAnalytics ← depends on posthog-ios, adds analytics + flags
+AtlasCommonSwift              ← zero dependencies, core types
+AtlasCommonSwiftOTel          ← depends on opentelemetry-swift, adds tracing
+AtlasCommonSwiftAnalytics     ← depends on posthog-ios, adds analytics + flags
+AuthCore                      ← central-auth client: AuthSession (token store + 401-refresh), AuthController (login-state VM base, email/password built in); zero provider deps
+AtlasCommonSwiftAuthApple     ← Apple sign-in (AppleSignInController)
+AtlasCommonSwiftAuthGoogle    ← Google sign-in (GoogleSignInController)
 ```
 
-Consumers pick only what they need. All three are in one SPM package for atomic versioning.
+Consumers pick only what they need. All six are in one SPM package for atomic versioning.
 
 ### AtlasCommonSwift (Core)
 
@@ -59,22 +62,22 @@ Consumers pick only what they need. All three are in one SPM package for atomic 
 ## Versioning & Release
 
 ```bash
-git tag v0.2.7
-git push origin v0.2.7
+git tag v0.3.2
+git push origin v0.3.2
 ```
 
 Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new release.
 
 **Breaking change rules:**
-- Adding new public API = minor bump (0.2.x → 0.3.0)
+- Adding new public API = minor bump (0.3.x → 0.4.0)
 - Changing existing public API signature = must bump + update all consumers
-- Internal-only changes = patch bump (0.2.6 → 0.2.7)
+- Internal-only changes = patch bump (0.3.1 → 0.3.2)
 
 ## Consumers
 
 | App | Version | Products Used |
 |-----|---------|---------------|
-| Snag iOS | v0.2.6 | All three |
+| Snag iOS | v0.3.1 | All six |
 
 ## Testing Requirements
 

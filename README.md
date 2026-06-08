@@ -1,6 +1,6 @@
 # AtlasCommonSwift
 
-Common Swift building blocks for Atlas iOS projects. Three library products in one SPM package.
+Common Swift building blocks for Atlas iOS projects. Six library products in one SPM package.
 
 ## Installation
 
@@ -8,7 +8,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/francislyj/AtlasCommonSwift.git", from: "0.2.6"),
+    .package(url: "https://github.com/francislyj/AtlasCommonSwift.git", from: "0.3.1"),
 ]
 ```
 
@@ -32,6 +32,9 @@ Then add the products you need to your target:
 | `AtlasCommonSwift` | None | Core types, HTTP client, Keychain, Logger |
 | `AtlasCommonSwiftOTel` | opentelemetry-swift | OTel setup, instrumented HTTP client, log upload |
 | `AtlasCommonSwiftAnalytics` | posthog-ios | PostHog analytics + feature flags |
+| `AuthCore` | None | Central-auth client: `AuthSession` (token store + 401-refresh `withRetry`), `AuthController` (login-state VM base, email/password built in) |
+| `AtlasCommonSwiftAuthApple` | AuthenticationServices | Apple sign-in (`AppleSignInController`) |
+| `AtlasCommonSwiftAuthGoogle` | GoogleSignIn | Google sign-in (`GoogleSignInController`) |
 
 ---
 
