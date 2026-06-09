@@ -14,4 +14,6 @@ public enum ErrorCode: Int, Sendable {
     case success = 0
     case internalError = 10000
     case unauthorized = 10001
+    case invalidParams = 10002
+    case rateLimited = 10003
 }
