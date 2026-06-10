@@ -8,7 +8,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/francislyj/AtlasCommonSwift.git", from: "0.3.1"),
+    .package(url: "https://github.com/francislyj/AtlasCommonSwift.git", from: "0.4.0"),
 ]
 ```
 
@@ -46,7 +46,7 @@ Then add the products you need to your target:
 |------|-------------|
 | `ApiResponse<T>` | Matches Go backend envelope: `{ "code": 0, "message": "success", "data": T }` |
 | `ApiError` | `.business(code, message)`, `.unauthorized`, `.network(Error)`, `.decoding(Error)`, `.unknown` |
-| `ErrorCode` | Constants: `.success` (0), `.internal` (10000), `.unauthorized` (10001) |
+| `ErrorCode` | Constants: `.success` (0), `.internalError` (10000), `.unauthorized` (10001), `.invalidParams` (10002), `.rateLimited` (10003) |
 
 ### HTTPClient
 

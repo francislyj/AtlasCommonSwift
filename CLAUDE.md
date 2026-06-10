@@ -1,6 +1,6 @@
 # CLAUDE.md — AtlasCommonSwift
 
-Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.3.1.
+Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.4.0.
 
 ## Build & Test
 
@@ -62,8 +62,8 @@ Consumers pick only what they need. All six are in one SPM package for atomic ve
 ## Versioning & Release
 
 ```bash
-git tag v0.3.2
-git push origin v0.3.2
+git tag v0.4.1
+git push origin v0.4.1
 ```
 
 Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new release.
@@ -77,7 +77,7 @@ Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new re
 
 | App | Version | Products Used |
 |-----|---------|---------------|
-| Snag iOS | v0.3.1 | All six |
+| Snag iOS | v0.4.0 | All six |
 
 ## Testing Requirements
 
