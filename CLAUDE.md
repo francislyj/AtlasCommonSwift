@@ -1,6 +1,6 @@
 # CLAUDE.md — AtlasCommonSwift
 
-Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.4.0.
+Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.5.0.
 
 ## Build & Test
 
@@ -29,7 +29,7 @@ Consumers pick only what they need. All six are in one SPM package for atomic ve
 | File | Type | Exports |
 |------|------|---------|
 | `Types/ApiResponse.swift` | `struct` | `ApiResponse<T: Decodable>` — matches Go `{code, message, data}` envelope |
-| `Types/ApiError.swift` | `enum` | `.business(code, message)`, `.unauthorized`, `.network`, `.decoding`, `.unknown` |
+| `Types/ApiError.swift` | `enum` | `.business(code, message)`, `.unauthorized`, `.network`, `.decoding`, `.unknown`; conforms to `LocalizedError` (`errorDescription`: business→backend message, shells→English) |
 | `HTTP/HTTPClient.swift` | `actor` | Generic async HTTP client, auto-unwraps `ApiResponse`, injects auth token |
 | `HTTP/HTTPMethod.swift` | `enum` | `.get`, `.post`, `.put`, `.delete` |
 | `Keychain/KeychainHelper.swift` | `enum` (namespace) | `saveString`, `loadString`, `delete` |
@@ -62,8 +62,8 @@ Consumers pick only what they need. All six are in one SPM package for atomic ve
 ## Versioning & Release
 
 ```bash
-git tag v0.4.1
-git push origin v0.4.1
+git tag v0.5.1
+git push origin v0.5.1
 ```
 
 Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new release.
@@ -77,7 +77,7 @@ Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new re
 
 | App | Version | Products Used |
 |-----|---------|---------------|
-| Snag iOS | v0.4.0 | All six |
+| Snag iOS | v0.5.0 | All six |
 
 ## Testing Requirements
 
