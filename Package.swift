@@ -81,6 +81,10 @@ let package = Package(
             name: "AtlasCommonSwiftOTelTests",
             dependencies: ["AtlasCommonSwiftOTel"]
         ),
+        .testTarget(
+            name: "AuthCoreTests",
+            dependencies: ["AuthCore", "AtlasCommonSwift"]
+        ),
     ],
     swiftLanguageModes: [.v6]
 )

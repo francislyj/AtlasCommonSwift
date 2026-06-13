@@ -81,7 +81,11 @@ Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new re
 
 ## Testing Requirements
 
-Per `architecture/standards/testing.md`: every exported public function must have a test. Current gaps:
+Per `architecture/standards/testing.md`: every exported public function must have a test.
+
+`AuthCore` is covered by `AuthCoreTests` (AuthSession flows, withRetry 401-refresh, AuthController state). Tests inject a `TokenStoring` double (`InMemoryTokenStore`) instead of the Keychain, and a per-session `MockURLProtocol` instead of the network — so the suite is hermetic and parallel-safe.
+
+Current gaps:
 - `AtlasCommonSwiftAnalytics` — no test target yet (PostHog SDK makes unit testing hard; consider protocol mock)
 
 ## Common Tasks

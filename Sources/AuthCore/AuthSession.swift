@@ -11,15 +11,25 @@ import Foundation
 /// carries the current access token.
 public actor AuthSession {
     private let client: HTTPClient
+    private let tokenStore: TokenStoring
     private var accessToken: String?
     private var refreshToken: String?
 
-    /// - Parameter baseURL: the backend base URL (same host the app's API uses).
-    public init(baseURL: URL, session: URLSession = .shared) {
+    /// - Parameters:
+    ///   - baseURL: the backend base URL (same host the app's API uses).
+    ///   - session: URLSession used for auth endpoints (override in tests).
+    ///   - tokenStore: persistence for the JWT pair; defaults to the Keychain.
+    public init(
+        baseURL: URL,
+        session: URLSession = .shared,
+        tokenStore: TokenStoring? = nil
+    ) {
+        let store = tokenStore ?? KeychainTokenStore()
         self.client = HTTPClient(baseURL: baseURL, session: session)
-        // Restore from Keychain so a relaunch stays signed in.
-        self.accessToken = TokenStore.loadAccess()
-        self.refreshToken = TokenStore.loadRefresh()
+        self.tokenStore = store
+        // Restore from the store so a relaunch stays signed in.
+        self.accessToken = store.loadAccess()
+        self.refreshToken = store.loadRefresh()
     }
 
     /// True if a refresh token is present (i.e. previously signed in).
@@ -98,7 +108,7 @@ public actor AuthSession {
     public func signOut() {
         accessToken = nil
         refreshToken = nil
-        TokenStore.clear()
+        tokenStore.clear()
     }
 
     /// Runs an authenticated request; on `ApiError.unauthorized` it refreshes the
@@ -124,6 +134,6 @@ public actor AuthSession {
     private func store(_ tokens: TokenResponse) {
         accessToken = tokens.accessToken
         refreshToken = tokens.refreshToken
-        TokenStore.save(tokens)
+        tokenStore.save(tokens)
     }
 }
