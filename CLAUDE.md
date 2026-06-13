@@ -62,8 +62,8 @@ Consumers pick only what they need. All six are in one SPM package for atomic ve
 ## Versioning & Release
 
 ```bash
-git tag v0.5.1
-git push origin v0.5.1
+git tag v0.5.2
+git push origin v0.5.2
 ```
 
 Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new release.
