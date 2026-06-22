@@ -1,6 +1,6 @@
 # CLAUDE.md — AtlasCommonSwift
 
-Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.5.0.
+Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.5.2.
 
 ## Build & Test
 
@@ -31,7 +31,7 @@ Consumers pick only what they need. All six are in one SPM package for atomic ve
 | `Types/ApiResponse.swift` | `struct` | `ApiResponse<T: Decodable>` — matches Go `{code, message, data}` envelope |
 | `Types/ApiError.swift` | `enum` | `.business(code, message)`, `.unauthorized`, `.network`, `.decoding`, `.unknown`; conforms to `LocalizedError` (`errorDescription`: business→backend message, shells→English) |
 | `HTTP/HTTPClient.swift` | `actor` | Generic async HTTP client, auto-unwraps `ApiResponse`, injects auth token |
-| `HTTP/HTTPMethod.swift` | `enum` | `.get`, `.post`, `.put`, `.delete` |
+| `HTTP/HTTPMethod.swift` | `enum` | `.get`, `.post`, `.put`, `.patch`, `.delete` |
 | `Keychain/KeychainHelper.swift` | `enum` (namespace) | `saveString`, `loadString`, `delete` |
 | `Logger/Logger.swift` | `enum` (namespace) | `Log.info/error/debug/warning(_, category:)` wrapping `os.Logger` |
 

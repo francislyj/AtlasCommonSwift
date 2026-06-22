@@ -45,6 +45,14 @@ public actor HTTPClient {
         try await request(path, method: .put, body: body, additionalHeaders: additionalHeaders)
     }
 
+    public func patch<T: Decodable & Sendable>(
+        _ path: String,
+        body: (any Encodable & Sendable)? = nil,
+        additionalHeaders: [String: String] = [:]
+    ) async throws -> T {
+        try await request(path, method: .patch, body: body, additionalHeaders: additionalHeaders)
+    }
+
     public func delete<T: Decodable & Sendable>(
         _ path: String,
         additionalHeaders: [String: String] = [:]

@@ -43,6 +43,15 @@ public actor InstrumentedHTTPClient {
         }
     }
 
+    public func patch<T: Decodable & Sendable>(
+        _ path: String,
+        body: (any Encodable & Sendable)? = nil
+    ) async throws -> T {
+        try await traced("PATCH", path: path) { headers in
+            try await self.inner.patch(path, body: body, additionalHeaders: headers)
+        }
+    }
+
     public func delete<T: Decodable & Sendable>(
         _ path: String
     ) async throws -> T {
