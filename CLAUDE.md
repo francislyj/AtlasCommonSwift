@@ -59,6 +59,13 @@ Consumers pick only what they need. All six are in one SPM package for atomic ve
 - **Swift 6 strict concurrency** — `swiftLanguageModes: [.v6]`. All public types must be `Sendable`.
 - **`nonisolated init(from:)`** on consumer Decodable types — required because `Decodable.init(from:)` is a nonisolated protocol requirement. Consumers must write explicit nonisolated decoders if their type is actor-isolated.
 
+## Decoder Pitfalls
+
+`HTTPClient` decodes with `keyDecodingStrategy = .convertFromSnakeCase` (`HTTP/HTTPClient.swift:19`). Two traps every consumer hits:
+
+- **Abbreviations don't round-trip.** `.convertFromSnakeCase` capitalizes only the *first* letter of each underscore-delimited segment, so `base_url` becomes `baseUrl` (lowercase "rl"), **not** `baseURL`. A property named `baseURL` silently fails to decode. Fix: give the type an explicit `CodingKeys` whose raw value is the **post-conversion** camelCase form — `case baseURL = "baseUrl"`, NOT `"base_url"`. (Verified empirically; bit both Snag and Parrot before being documented here.)
+- **A `CodingKeys` raw value must be the converted key, not the wire key.** Because the strategy runs *before* key matching, every custom `CodingKeys` raw value you write is matched against the already-camelCased key, not the original snake_case JSON.
+
 ## Versioning & Release
 
 ```bash
