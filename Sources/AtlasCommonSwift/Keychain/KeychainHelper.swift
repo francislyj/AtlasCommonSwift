@@ -10,6 +10,15 @@ public enum KeychainHelper {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key,
             kSecValueData as String: data,
+            // Persist across relaunches without needing the device unlocked at the
+            // moment of access. The Keychain default (kSecAttrAccessibleWhenUnlocked)
+            // makes the item unreadable while the device is locked — a token read on
+            // a background/locked-device launch then returns nil and the app treats
+            // the user as signed out. AfterFirstUnlock keeps it readable for the
+            // rest of the boot session while still encrypted-at-rest before first
+            // unlock. Auth tokens are exactly this "persist, read anytime after
+            // first unlock" case.
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
         ]
 
         return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
