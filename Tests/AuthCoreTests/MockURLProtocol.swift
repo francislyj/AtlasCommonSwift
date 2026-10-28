@@ -4,15 +4,15 @@ import Foundation
 /// hits the network. Handlers are registered per-session and routed by a unique
 /// `X-Mock-ID` header, so parallel tests (swift-testing's default) never share or
 /// stomp on each other's handler.
-final class MockURLProtocol: URLProtocol {
+final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     private struct Registry: @unchecked Sendable {
         let lock = NSLock()
-        var handlers: [String: @Sendable (URLRequest) -> (Int, Data)] = [:]
+        var handlers: [String: @Sendable (URLRequest) async -> (Int, Data)] = [:]
         var counter = 0
     }
     nonisolated(unsafe) private static var registry = Registry()
 
-    private static func register(_ handler: @escaping @Sendable (URLRequest) -> (Int, Data)) -> String {
+    private static func register(_ handler: @escaping @Sendable (URLRequest) async -> (Int, Data)) -> String {
         registry.lock.lock(); defer { registry.lock.unlock() }
         registry.counter += 1
         let id = "mock-\(registry.counter)"
@@ -20,7 +20,7 @@ final class MockURLProtocol: URLProtocol {
         return id
     }
 
-    private static func handler(for id: String) -> (@Sendable (URLRequest) -> (Int, Data))? {
+    private static func handler(for id: String) -> (@Sendable (URLRequest) async -> (Int, Data))? {
         registry.lock.lock(); defer { registry.lock.unlock() }
         return registry.handlers[id]
     }
@@ -34,7 +34,18 @@ final class MockURLProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
             return
         }
-        let (status, body) = handler(request)
+        Task {
+        let (status, body) = await handler(request)
+        deliver(status: status, body: body)
+        }
+    }
+
+    private let deliveryLock = NSLock()
+    private var stopped = false
+
+    private func deliver(status: Int, body: Data) {
+        deliveryLock.lock(); defer { deliveryLock.unlock() }
+        guard !stopped else { return }
         let response = HTTPURLResponse(
             url: request.url!,
             statusCode: status,
@@ -46,11 +57,14 @@ final class MockURLProtocol: URLProtocol {
         client?.urlProtocolDidFinishLoading(self)
     }
 
-    override func stopLoading() {}
+    override func stopLoading() {
+        deliveryLock.lock(); defer { deliveryLock.unlock() }
+        stopped = true
+    }
 
     /// A URLSession wired to this protocol, serving the given handler. Each call
     /// gets its own id so concurrent tests never interfere.
-    static func makeSession(_ handler: @escaping @Sendable (URLRequest) -> (Int, Data)) -> URLSession {
+    static func makeSession(_ handler: @escaping @Sendable (URLRequest) async -> (Int, Data)) -> URLSession {
         let id = register(handler)
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]

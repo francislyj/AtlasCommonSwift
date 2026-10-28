@@ -14,6 +14,8 @@ public actor AuthSession {
     private let tokenStore: TokenStoring
     private var accessToken: String?
     private var refreshToken: String?
+    private var generation: UInt64 = 0
+    private var refreshTask: Task<String, Error>?
 
     /// - Parameters:
     ///   - baseURL: the backend base URL (same host the app's API uses).
@@ -48,21 +50,30 @@ public actor AuthSession {
     /// Apple, "id_token" for Google).
     public func signIn(provider: String, token: String, bodyKey: String) async throws {
         let body = [bodyKey: token]
+        let epoch = beginAuthentication()
         let tokens: TokenResponse = try await client.post("/v1/auth/\(provider)", body: body)
-        store(tokens)
+        try completeAuthentication(tokens, epoch: epoch)
     }
 
     /// Rotates the refresh token into a new pair. Throws `.notAuthenticated`
     /// when signed out.
     @discardableResult
     public func refresh() async throws -> String {
+        if let task = refreshTask { return try await task.value }
         guard let current = refreshToken else { throw AuthError.notAuthenticated }
-        let tokens: TokenResponse = try await client.post(
-            "/v1/auth/refresh",
-            body: ["refresh_token": current]
-        )
-        store(tokens)
-        return tokens.accessToken
+        let epoch = generation
+        let task = Task { [client] in
+            let tokens: TokenResponse = try await client.post(
+                "/v1/auth/refresh", body: ["refresh_token": current]
+            )
+            try Task.checkCancellation()
+            guard epoch == self.generation else { throw CancellationError() }
+            self.store(tokens)
+            return tokens.accessToken
+        }
+        refreshTask = task
+        defer { if generation == epoch { refreshTask = nil } }
+        return try await task.value
     }
 
     /// Starts email/password registration: backend emails a 6-digit code.
@@ -75,20 +86,22 @@ public actor AuthSession {
 
     /// Confirms registration with the emailed code; stores the issued JWT pair.
     public func registerConfirm(email: String, code: String) async throws {
+        let epoch = beginAuthentication()
         let tokens: TokenResponse = try await client.post(
             "/v1/auth/register/confirm",
             body: ["email": email, "code": code]
         )
-        store(tokens)
+        try completeAuthentication(tokens, epoch: epoch)
     }
 
     /// Email/password login; stores the issued JWT pair.
     public func login(email: String, password: String) async throws {
+        let epoch = beginAuthentication()
         let tokens: TokenResponse = try await client.post(
             "/v1/auth/login",
             body: ["email": email, "password": password]
         )
-        store(tokens)
+        try completeAuthentication(tokens, epoch: epoch)
     }
 
     /// Starts a password reset: backend emails a 6-digit code.
@@ -106,29 +119,72 @@ public actor AuthSession {
 
     /// Clears tokens from memory and Keychain.
     public func signOut() {
+        let previousRefresh = refreshToken
+        generation &+= 1
+        refreshTask?.cancel()
+        refreshTask = nil
         accessToken = nil
         refreshToken = nil
         tokenStore.clear()
+        // Local logout is immediate even offline. The server enforces absolute
+        // session expiry; this best-effort request revokes the current session.
+        if let previousRefresh {
+            Task { [client] in
+                try? await client.postExpectingNoData("/v1/auth/logout", body: ["refresh_token": previousRefresh])
+            }
+        }
     }
 
     /// Runs an authenticated request; on `ApiError.unauthorized` it refreshes the
-    /// token once and retries. A second 401 (or a failed refresh) propagates as
-    /// `.unauthorized` so the caller can drive the user back to the login gate.
+    /// token once and retries. Invalid credentials propagate as `.unauthorized`;
+    /// temporary network failures retain their original error for retry UI.
     ///
     /// `operation` is intentionally not `@Sendable` so it inherits the caller's
     /// isolation (required under MainActor-default concurrency, where request
     /// bodies may be MainActor-isolated).
     public func withRetry<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
+        let epoch = generation
+        let originalAccess = accessToken
         do {
-            return try await operation()
+            let result = try await operation()
+            guard epoch == generation else { throw CancellationError() }
+            return result
         } catch ApiError.unauthorized {
-            do {
-                _ = try await refresh()
-            } catch {
-                throw ApiError.unauthorized
+            guard epoch == generation else { throw CancellationError() }
+            // Another request may already have refreshed while this one was
+            // awaiting its 401. Reuse that result instead of rotating again.
+            if accessToken == originalAccess {
+                do { _ = try await refresh() }
+                catch {
+                    guard epoch == generation else { throw CancellationError() }
+                    if error is CancellationError { throw error }
+                    if case ApiError.unauthorized = error { throw ApiError.unauthorized }
+                    if case AuthError.notAuthenticated = error { throw ApiError.unauthorized }
+                    throw error // a temporary network failure is not a logout
+                }
             }
-            return try await operation()
+            guard epoch == generation else { throw CancellationError() }
+            let result = try await operation()
+            guard epoch == generation else { throw CancellationError() }
+            return result
         }
+    }
+
+    private func beginAuthentication() -> UInt64 {
+        generation &+= 1
+        refreshTask?.cancel()
+        refreshTask = nil
+        return generation
+    }
+
+    private func completeAuthentication(_ tokens: TokenResponse, epoch: UInt64) throws {
+        guard epoch == generation else { throw CancellationError() }
+        // Also invalidate requests started during the login await, while the
+        // previous account's tokens were still present.
+        generation &+= 1
+        refreshTask?.cancel()
+        refreshTask = nil
+        store(tokens)
     }
 
     private func store(_ tokens: TokenResponse) {

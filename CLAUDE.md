@@ -1,6 +1,6 @@
 # CLAUDE.md — AtlasCommonSwift
 
-Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Current version: v0.5.2.
+Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Release version: v0.5.4.
 
 ## Build & Test
 
@@ -69,11 +69,11 @@ Consumers pick only what they need. All six are in one SPM package for atomic ve
 ## Versioning & Release
 
 ```bash
-git tag v0.5.2
-git push origin v0.5.2
+git tag v0.5.4
+git push origin v0.5.4
 ```
 
-Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new release.
+Consumers (Parrot iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new release.
 
 **Breaking change rules:**
 - Adding new public API = minor bump (0.3.x → 0.4.0)
@@ -84,7 +84,7 @@ Consumers (Snag iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new re
 
 | App | Version | Products Used |
 |-----|---------|---------------|
-| Snag iOS | v0.5.0 | All six |
+| Parrot iOS | v0.5.4 required for session fixes | Core, OTel, AuthCore/AuthApple |
 
 ## Testing Requirements
 
@@ -108,3 +108,5 @@ Current gaps:
 ### Updating dependencies
 
 Edit `Package.swift` dependency versions, then `swift package resolve`. Test on both macOS (swift test) and iOS simulator (Xcode).
+
+AuthSession coalesces refresh and discards stale login/API responses across account generations. Both starting and completing authentication cancel and clear pending refresh tasks, so a refresh started during login cannot block the new account. Logout clears local tokens immediately and attempts server revocation. Temporary network failures are propagated without pretending credentials were revoked. Concurrent session regressions are covered by `AuthSessionConcurrencyTests`.
