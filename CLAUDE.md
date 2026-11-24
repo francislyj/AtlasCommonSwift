@@ -1,6 +1,8 @@
 # CLAUDE.md — AtlasCommonSwift
 
-Shared Swift SPM package providing the cross-product contract layer for all atlas iOS apps. Release version: v0.5.4.
+Shared Swift SPM package providing the cross-product contract layer for atlas iOS apps. Release version: v0.5.4.
+
+Frozen on 2026-11-24: no app consumes it right now. Keep it as the foundation for the next iOS app. Don't add products until that app exists. The iOS blueprint is `architecture/guides/ios-app-blueprint.md`.
 
 ## Build & Test
 
@@ -73,7 +75,7 @@ git tag v0.5.4
 git push origin v0.5.4
 ```
 
-Consumers (Parrot iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new release.
+Consumers resolve by tag in Xcode SPM. Bump tag = new release.
 
 **Breaking change rules:**
 - Adding new public API = minor bump (0.3.x → 0.4.0)
@@ -82,9 +84,7 @@ Consumers (Parrot iOS, future apps) resolve by tag in Xcode SPM. Bump tag = new 
 
 ## Consumers
 
-| App | Version | Products Used |
-|-----|---------|---------------|
-| Parrot iOS | v0.5.4 required for session fixes | Core, OTel, AuthCore/AuthApple |
+None at present. Parrot iOS was the only consumer (v0.5.4; Core, OTel, AuthCore/AuthApple) and was retired on 2026-11-24.
 
 ## Testing Requirements
 
